@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test PHP ${{ matrix.php-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: openssl
+          coverage: xdebug
+
+      - name: Enable OpenSSL legacy provider (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          printf "openssl_conf = openssl_init\n[openssl_init]\nproviders = provider_sect\n[provider_sect]\ndefault = default_sect\nlegacy = legacy_sect\n[default_sect]\nactivate = 1\n[legacy_sect]\nactivate = 1\n" > "${{ github.workspace }}/openssl-legacy.cnf"
+          echo "OPENSSL_CONF=${{ github.workspace }}/openssl-legacy.cnf" >> $GITHUB_ENV
+
+      - name: Enable OpenSSL legacy provider (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $conf = "openssl_conf = openssl_init`n[openssl_init]`nproviders = provider_sect`n[provider_sect]`ndefault = default_sect`nlegacy = legacy_sect`n[default_sect]`nactivate = 1`n[legacy_sect]`nactivate = 1"
+          $confPath = Join-Path "${{ github.workspace }}" "openssl-legacy.cnf"
+          $conf | Set-Content -Path $confPath -NoNewline
+          echo "OPENSSL_CONF=$confPath" >> $env:GITHUB_ENV
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests
+        run: composer test
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: openssl
+          coverage: xdebug
+
+      - name: Enable OpenSSL legacy provider
+        run: |
+          printf "openssl_conf = openssl_init\n[openssl_init]\nproviders = provider_sect\n[provider_sect]\ndefault = default_sect\nlegacy = legacy_sect\n[default_sect]\nactivate = 1\n[legacy_sect]\nactivate = 1\n" > "${{ github.workspace }}/openssl-legacy.cnf"
+          echo "OPENSSL_CONF=${{ github.workspace }}/openssl-legacy.cnf" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --coverage-clover coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false

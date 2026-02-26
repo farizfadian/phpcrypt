@@ -1,0 +1,331 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * PHPCrypt CLI - Command line tool for encrypting and decrypting values.
+ *
+ * Usage:
+ *   phpcrypt encrypt -p <password> -v <value>
+ *   phpcrypt decrypt -p <password> -v <encrypted_value>
+ *   phpcrypt encrypt-file -p <password> -i <input_file> -o <output_file>
+ *
+ * Environment variable PHPCRYPT_PASSWORD can be used instead of -p flag.
+ *
+ * Made with ❤️ from Claude AI for PHP developers who need Jasypt.
+ */
+
+declare(strict_types=1);
+
+// Autoload
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+
+foreach ($autoloadPaths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        break;
+    }
+}
+
+use PHPCrypt\Encryptor;
+use PHPCrypt\JasyptEncryptor;
+use PHPCrypt\JasyptStrongEncryptor;
+use PHPCrypt\Utils;
+
+const VERSION = '1.0.0';
+
+function parseArgs(array $argv): array
+{
+    $args = [
+        'command' => null,
+        'password' => null,
+        'value' => null,
+        'input' => null,
+        'output' => null,
+        'noPrefix' => false,
+        'jasypt' => false,
+        'jasyptStrong' => false,
+    ];
+
+    $i = 1; // Skip script name
+    while ($i < count($argv)) {
+        $arg = $argv[$i];
+
+        switch ($arg) {
+            case 'encrypt':
+            case 'decrypt':
+            case 'encrypt-file':
+            case 'decrypt-file':
+            case 'version':
+            case 'help':
+                $args['command'] = $arg;
+                break;
+            case '-p':
+            case '--password':
+                $args['password'] = $argv[++$i] ?? null;
+                break;
+            case '-v':
+            case '--value':
+                $args['value'] = $argv[++$i] ?? null;
+                break;
+            case '-i':
+            case '--input':
+                $args['input'] = $argv[++$i] ?? null;
+                break;
+            case '-o':
+            case '--output':
+                $args['output'] = $argv[++$i] ?? null;
+                break;
+            case '--no-prefix':
+                $args['noPrefix'] = true;
+                break;
+            case '--jasypt':
+                $args['jasypt'] = true;
+                break;
+            case '--jasypt-strong':
+                $args['jasyptStrong'] = true;
+                break;
+            case '-V':
+            case '--version':
+                $args['command'] = 'version';
+                break;
+            case '-h':
+            case '--help':
+                $args['command'] = 'help';
+                break;
+        }
+        $i++;
+    }
+
+    return $args;
+}
+
+function getPassword(?string $argsPassword): string
+{
+    return $argsPassword ?? getenv('PHPCRYPT_PASSWORD') ?: '';
+}
+
+function createEncryptor(string $password, bool $jasypt, bool $jasyptStrong): Encryptor|JasyptEncryptor|JasyptStrongEncryptor
+{
+    if ($jasypt) {
+        return new JasyptEncryptor($password);
+    } elseif ($jasyptStrong) {
+        return new JasyptStrongEncryptor($password);
+    }
+    return new Encryptor($password);
+}
+
+function printUsage(): void
+{
+    echo <<<USAGE
+
+phpcrypt - Jasypt-like encryption for PHP configurations
+
+Made with ❤️ from Claude AI for PHP developers who need Jasypt
+
+Usage:
+  phpcrypt <command> [options]
+
+Commands:
+  encrypt       Encrypt a single value
+  decrypt       Decrypt a single value
+  encrypt-file  Encrypt all values in a file
+  decrypt-file  Decrypt all ENC(...) values in a file
+  version       Show version information
+  help          Show this help message
+
+Options:
+  -p, --password    Encryption password (or set PHPCRYPT_PASSWORD env var)
+  -v, --value       Value to encrypt/decrypt
+  -i, --input       Input file path
+  -o, --output      Output file path
+  --no-prefix       Don't wrap encrypted value with ENC(...)
+  --jasypt          Use Jasypt-compatible algorithm (PBEWithMD5AndDES)
+  --jasypt-strong   Use Jasypt strong algorithm (PBEWithHmacSHA256AndAES_256)
+
+Examples:
+  # Encrypt a database password
+  phpcrypt encrypt -p mySecret -v "db_password123"
+  
+  # Decrypt a value
+  phpcrypt decrypt -p mySecret -v "ENC(base64encodedvalue)"
+  
+  # Encrypt values in a .env file
+  phpcrypt encrypt-file -p mySecret -i .env.plain -o .env.encrypted
+  
+  # Use Jasypt-compatible encryption
+  phpcrypt encrypt -p mySecret -v "secret" --jasypt
+
+Environment Variables:
+  PHPCRYPT_PASSWORD  Password for encryption/decryption
+
+
+USAGE;
+}
+
+function cmdEncrypt(array $args): void
+{
+    $password = getPassword($args['password']);
+    if (empty($password)) {
+        fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
+        exit(1);
+    }
+
+    if (empty($args['value'])) {
+        fwrite(STDERR, "Error: value is required (-v)\n");
+        exit(1);
+    }
+
+    try {
+        $enc = createEncryptor($password, $args['jasypt'], $args['jasyptStrong']);
+
+        if ($args['noPrefix']) {
+            $result = $enc->encrypt($args['value']);
+        } else {
+            $result = $enc->encryptWithPrefix($args['value']);
+        }
+
+        echo $result . "\n";
+    } catch (\Exception $e) {
+        fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+        exit(1);
+    }
+}
+
+function cmdDecrypt(array $args): void
+{
+    $password = getPassword($args['password']);
+    if (empty($password)) {
+        fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
+        exit(1);
+    }
+
+    if (empty($args['value'])) {
+        fwrite(STDERR, "Error: value is required (-v)\n");
+        exit(1);
+    }
+
+    try {
+        $enc = createEncryptor($password, $args['jasypt'], $args['jasyptStrong']);
+
+        if (Utils::isEncrypted($args['value'])) {
+            $result = $enc->decryptPrefixed($args['value']);
+        } else {
+            $result = $enc->decrypt($args['value']);
+        }
+
+        echo $result . "\n";
+    } catch (\Exception $e) {
+        fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+        exit(1);
+    }
+}
+
+function cmdEncryptFile(array $args): void
+{
+    $password = getPassword($args['password']);
+    if (empty($password)) {
+        fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
+        exit(1);
+    }
+
+    if (empty($args['input'])) {
+        fwrite(STDERR, "Error: input file is required (-i)\n");
+        exit(1);
+    }
+
+    try {
+        $enc = createEncryptor($password, $args['jasypt'], $args['jasyptStrong']);
+        $content = file_get_contents($args['input']);
+        $lines = explode("\n", $content);
+
+        $outputLines = [];
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            // Process lines with KEY=VALUE format
+            if (str_contains($trimmed, '=') && !str_starts_with($trimmed, '#')) {
+                $pos = strpos($trimmed, '=');
+                $key = substr($trimmed, 0, $pos);
+                $value = trim(substr($trimmed, $pos + 1), '"\'');
+
+                // Encrypt if not already encrypted and not empty
+                if (!Utils::isEncrypted($value) && !empty($value)) {
+                    $encrypted = $enc->encryptWithPrefix($value);
+                    $outputLines[] = "$key=$encrypted";
+                    continue;
+                }
+            }
+
+            $outputLines[] = $line;
+        }
+
+        $output = implode("\n", $outputLines);
+
+        if (!empty($args['output'])) {
+            file_put_contents($args['output'], $output);
+        } else {
+            echo $output;
+        }
+    } catch (\Exception $e) {
+        fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+        exit(1);
+    }
+}
+
+function cmdDecryptFile(array $args): void
+{
+    $password = getPassword($args['password']);
+    if (empty($password)) {
+        fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
+        exit(1);
+    }
+
+    if (empty($args['input'])) {
+        fwrite(STDERR, "Error: input file is required (-i)\n");
+        exit(1);
+    }
+
+    try {
+        $enc = createEncryptor($password, $args['jasypt'], $args['jasyptStrong']);
+        $content = file_get_contents($args['input']);
+        $decrypted = $enc->decryptAllInString($content);
+
+        if (!empty($args['output'])) {
+            file_put_contents($args['output'], $decrypted);
+        } else {
+            echo $decrypted;
+        }
+    } catch (\Exception $e) {
+        fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+        exit(1);
+    }
+}
+
+// Main
+$args = parseArgs($argv);
+
+switch ($args['command']) {
+    case 'encrypt':
+        cmdEncrypt($args);
+        break;
+    case 'decrypt':
+        cmdDecrypt($args);
+        break;
+    case 'encrypt-file':
+        cmdEncryptFile($args);
+        break;
+    case 'decrypt-file':
+        cmdDecryptFile($args);
+        break;
+    case 'version':
+        echo "phpcrypt " . VERSION . "\n";
+        break;
+    case 'help':
+    default:
+        printUsage();
+        break;
+}

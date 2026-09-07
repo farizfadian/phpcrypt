@@ -20,7 +20,7 @@ If you're coming from Java/Spring Boot world and need to share encrypted configu
 - ✅ **Multiple algorithms** - From legacy Jasypt to modern AES-256-GCM
 - ✅ **Laravel/Symfony ready** - Easy integration with PHP frameworks
 - ✅ **CLI tool included** - Encrypt/decrypt from command line
-- ✅ **Cross-platform** - Works with GoCrypt, PyCrypt, NodeCrypt, and Java Jasypt
+- ✅ **Cross-platform** - Works with GoCrypt, PyCrypt, NodeCrypt, RustCrypt, and Java Jasypt
 
 ---
 
@@ -117,6 +117,7 @@ $enc = new JasyptStrongEncryptor($password);
 │ GoCrypt JasyptEnc      → JasyptEncryptor        ✅ YES          │
 │ PyCrypt JasyptEnc      → JasyptEncryptor        ✅ YES          │
 │ NodeCrypt JasyptEnc    → JasyptEncryptor        ✅ YES          │
+│ RustCrypt JasyptEnc    → JasyptEncryptor        ✅ YES          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -407,6 +408,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [GoCrypt](https://github.com/farizfadian/gocrypt) - Jasypt-like encryption for Go
 - [PyCrypt](https://github.com/farizfadian/pycrypt) - Jasypt-like encryption for Python
 - [NodeCrypt](https://github.com/farizfadian/nodecrypt) - Jasypt-like encryption for Node.js
+- [RustCrypt](https://github.com/farizfadian/rustcrypt) - Jasypt-like encryption for Rust
 - [Jasypt](http://www.jasypt.org/) - Original Java library
 
 ---

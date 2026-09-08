@@ -124,7 +124,7 @@ use PHPCrypt\JasyptStrongEncryptor;
 use PHPCrypt\ConfigLoader;
 use PHPCrypt\Utils;
 
-// Jasypt compatible (for BizCore / cross-language)
+// Jasypt compatible (for Java / cross-language)
 $enc = new JasyptEncryptor($password);
 $encrypted = $enc->encryptWithPrefix($plaintext);   // ENC(...)
 $plaintext = $enc->decryptPrefixed('ENC(...)');

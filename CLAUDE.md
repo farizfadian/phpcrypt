@@ -249,7 +249,7 @@ git push origin v1.x.x
 ## 📋 Full Context Reference
 
 For complete cross-language context, see:
-`C:\Users\Fariz Fadian\Documents\Fariz\PRIVATE\JASYPT-MULTI-LANGUAGE-CONTEXT.md`
+the maintainer's private family context document (`JASYPT-MULTI-LANGUAGE-CONTEXT.md`, kept outside this repository)
 
 ---
 

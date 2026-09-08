@@ -17,6 +17,10 @@ Package     : farizfadian/phpcrypt (Packagist)
 Dependencies: ext-openssl (PHP built-in)
 Dev Deps    : phpunit/phpunit ^10.0
 Created     : December 2024
+Status      : ✅ PUBLISHED & TESTED (v1.0.0)
+Install     : composer require farizfadian/phpcrypt
+Registry    : Packagist (auto-sync from GitHub via webhook)
+Token       : Not needed
 ```
 
 ---
@@ -194,8 +198,13 @@ BSD `sed -i` requires a backup extension argument unlike GNU sed. Fixed by using
 ### 3. DES Wrong Password - No Guaranteed Throw
 DES-CBC has NO integrity check (unlike AES-GCM). Decrypting with wrong password may produce garbage instead of throwing.
 
-### 4. No Release Workflow
-PHPCrypt has CI only (no automated Packagist publish). Publishing to Packagist is done via webhook from GitHub.
+### 4. No Release Workflow Needed
+Packagist auto-syncs from GitHub via webhook — just push a tag:
+```bash
+git tag v1.x.x
+git push origin v1.x.x
+# Packagist auto-syncs (no token needed)
+```
 
 ---
 
@@ -219,6 +228,28 @@ PHPCrypt has CI only (no automated Packagist publish). Publishing to Packagist i
 - **Namespace**: `PHPCrypt\`
 - **Autoload**: PSR-4, maps to `src/`
 - **PHPUnit bootstrap**: `vendor/autoload.php`
+
+---
+
+---
+
+## 📦 Publish & Release Status
+
+| Item | Status |
+|------|--------|
+| Published | ✅ v1.0.0 on Packagist |
+| Install | `composer require farizfadian/phpcrypt` |
+| CI | ✅ GitHub Actions (PHP 8.1/8.2/8.3, multi-OS) |
+| Release | ✅ Packagist auto-sync from GitHub (webhook) |
+| Token | Not needed |
+| Cross-language tested | ✅ Encrypt in PHP → Decrypt in Go/Python/Node/Java |
+
+---
+
+## 📋 Full Context Reference
+
+For complete cross-language context, see:
+`C:\Users\Fariz Fadian\Documents\Fariz\PRIVATE\JASYPT-MULTI-LANGUAGE-CONTEXT.md`
 
 ---
 

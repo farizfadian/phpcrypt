@@ -90,7 +90,8 @@ jobs:
           echo "OPENSSL_CONF=${{ github.workspace }}/openssl-legacy.cnf" >> $GITHUB_ENV
 
       - name: Check that DES really works
-        run: php -r 'exit(@openssl_encrypt("test", "des-cbc", "12345678", OPENSSL_RAW_DATA, "12345678") === false ? 1 : 0);'
+        run: |
+          php -r 'if (@openssl_encrypt("test", "des-cbc", "12345678", OPENSSL_RAW_DATA, "12345678") === false) { fwrite(STDERR, "DES-CBC is not available\n"); exit(1); } echo "DES-CBC works\n";'
 
       - name: Download counterparts (pinned by SHA-256)
         run: |

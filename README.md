@@ -177,6 +177,7 @@ Only the rows below were executed. A format that matches on paper is not a test.
 | Counterpart | Mode | Direction | Result |
 |-------------|------|-----------|--------|
 | GoCrypt v1.0.0, golden vectors | default, `--jasypt`, `--jasypt-strong` | GoCrypt → PHPCrypt, and byte-identical output for a fixed salt | ✅ every CI job (DES vectors skipped on Windows with PHP 8.2/8.3) |
+| GoCrypt v1.0.0, `Encryptor` key sizes 16, 24 and 32 | default | GoCrypt → PHPCrypt, and byte-identical output for a fixed salt | ✅ every CI job |
 | GoCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
 | RustCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
 | NodeCrypt 1.0.1 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
@@ -198,7 +199,9 @@ service on an older JDK must read the value, use an ASCII password.
 ### 🔑 `JasyptEncryptor` needs the OpenSSL legacy provider
 
 `PBEWithMD5AndDES` uses DES, which OpenSSL 3 only offers through its legacy provider. Without it
-`JasyptEncryptor` throws. Point `OPENSSL_CONF` at a file like this before PHP starts:
+`JasyptEncryptor` throws: `Encryption failed` from `encrypt()`, and from `decrypt()` the misleading
+`Decryption failed: invalid password or corrupted data`. If you see that with a password you know
+is right, check the provider first. Point `OPENSSL_CONF` at a file like this before PHP starts:
 
 ```ini
 openssl_conf = openssl_init
@@ -435,6 +438,7 @@ cross-language tests are skipped unless you tell them where the other tools are:
 export GOCRYPT_CLI=/path/to/gocrypt-cli       # github.com/farizfadian/gocrypt releases
 export RUSTCRYPT_CLI=/path/to/rustcrypt       # github.com/farizfadian/rustcrypt releases
 export NODECRYPT_CLI=/path/to/nodecrypt       # npm install -g nodecrypt-jasypt
+export NODE_OPTIONS=--openssl-legacy-provider # NodeCrypt refuses --jasypt without it
 export PYCRYPT_CLI=/path/to/pycrypt           # pip install pycrypt-jasypt
 export JASYPT_JAR=/path/to/jasypt-1.9.3.jar   # org.jasypt:jasypt on Maven Central, needs java on PATH
 
@@ -465,7 +469,7 @@ phpcrypt/
 │   ├── BackwardCompatibilityTest.php  # values written by PHPCrypt 1.0.0
 │   ├── LiveInteropTest.php            # live round trips with the other libraries
 │   ├── interop/JasyptTool.java        # drives the real Jasypt jar
-│   └── fixtures/                      # gocrypt_vectors.json, phpcrypt_1_0_0_vectors.json
+│   └── fixtures/                      # GoCrypt vectors, and values written by PHPCrypt 1.0.0
 ├── composer.json
 ├── phpunit.xml
 ├── README.md

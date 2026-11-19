@@ -15,10 +15,10 @@ settings all three modes already matched; the fixes below cover what did not.
 ### Fixed
 
 - **`Encryptor` with a key size of 16 or 24 bytes now matches GoCrypt.** 1.0.0 always used
-  AES-256-GCM and OpenSSL silently zero-padded the shorter key, so those values could not be read
-  by GoCrypt, RustCrypt, NodeCrypt or PyCrypt, and theirs could not be read by PHPCrypt. A 16-byte
-  key now selects AES-128-GCM and a 24-byte key AES-192-GCM. The default (32 bytes, AES-256-GCM)
-  writes exactly the same bytes as before.
+  AES-256-GCM and OpenSSL silently zero-padded the shorter key, so GoCrypt could not read those
+  values and PHPCrypt could not read GoCrypt's. A 16-byte key now selects AES-128-GCM and a 24-byte
+  key AES-192-GCM, checked against GoCrypt v1.0.0 in both directions for 16, 24 and 32 bytes. The
+  default (32 bytes, AES-256-GCM) writes exactly the same bytes as before.
   - Values written by 1.0.0 with any key size still decrypt: `decrypt()` tries the family format
     first, then the 1.0.0 layout. The GCM tag tells them apart.
   - Values written with a key size of 16 or 24 from this version on cannot be read by
@@ -42,7 +42,8 @@ settings all three modes already matched; the fixes below cover what did not.
 ### Added
 
 - Golden-vector tests against GoCrypt v1.0.0: every vector decrypts, and every fixed-salt vector is
-  reproduced byte for byte.
+  reproduced byte for byte. A second fixture, with its generator, covers the AES-GCM key sizes 16,
+  24 and 32.
 - Live round-trip tests, both directions, against GoCrypt, RustCrypt, NodeCrypt, PyCrypt and the
   real Java Jasypt jar, plus a CI job that runs them on Linux and fails if any test is skipped.
 - Tests for values written by PHPCrypt 1.0.0 and for the command-line tool.

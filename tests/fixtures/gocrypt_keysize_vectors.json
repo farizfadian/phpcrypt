@@ -1,0 +1,101 @@
+{
+  "description": "GoCrypt values for AES-GCM key sizes 16, 24 and 32. See gen-keysize-vectors/main.go.",
+  "generator": "tests/fixtures/gen-keysize-vectors/main.go",
+  "gocrypt_module": "github.com/farizfadian/gocrypt v1.0.0",
+  "generated_at": "2026-11-19",
+  "password": "phpcrypt-keysize-2026",
+  "vectors": [
+    {
+      "key_size": 16,
+      "iterations": 1000,
+      "salt_size": 16,
+      "plaintext": "hello",
+      "encoded": "AtnPQ3dIu27gCnvynW71T8roj25Mp2eGIUpcaH2nbKM4q5B8frsibm50byBz+/vDjA=="
+    },
+    {
+      "key_size": 16,
+      "iterations": 1000,
+      "salt_size": 16,
+      "plaintext": "Selamat pagi, PHPCrypt 🐘",
+      "encoded": "QlK8ha/t6oIH8Ufa8I/+9+4IBmAWvwYLnjX3Hls60+mG5rZNrEqSErRP9ifNUGMVcW78hBs0YjIgRBE5gS7ZOtPqFyCo53U="
+    },
+    {
+      "key_size": 24,
+      "iterations": 1000,
+      "salt_size": 16,
+      "plaintext": "hello",
+      "encoded": "BTwv7zrc/7fbCg0VNhtjeGFQKnjU310qmlAxbRNQac92rhynlssCtYFLYRRtAB5A8A=="
+    },
+    {
+      "key_size": 24,
+      "iterations": 1000,
+      "salt_size": 16,
+      "plaintext": "Selamat pagi, PHPCrypt 🐘",
+      "encoded": "tj2/MHlJkItGzmCvirMCnUK22gbV5BLI/afbzGOYsZry28FpETqPgqpG7hlRGN9CZJflMh2OUXUYO7lO2QbKgoga0MEo/GI="
+    },
+    {
+      "key_size": 32,
+      "iterations": 1000,
+      "salt_size": 16,
+      "plaintext": "hello",
+      "encoded": "FVDw4pGlBPheMhY8iRDFeFzqInkFZXg2NF22JfyPCs6nz3HxQDpbk3WvVtc+6t/8fg=="
+    },
+    {
+      "key_size": 32,
+      "iterations": 1000,
+      "salt_size": 16,
+      "plaintext": "Selamat pagi, PHPCrypt 🐘",
+      "encoded": "w56OuizwU9Q4nhaNZvCOID2PiR4ixfnZoxPllQdCYBdTi2gjYG5ehXOVz21YNGjp2DSIOtBSU2R71fqbHKdqionEe6bF16c="
+    }
+  ],
+  "fixed": [
+    {
+      "key_size": 16,
+      "iterations": 1000,
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "plaintext": "hello",
+      "encoded": "AAECAwQFBgcICQoLDA0OD6Gio6SlpqeoqaqrrFNQ8ZNZ0v1+ERZUKPTCG8wK2bw9FQ=="
+    },
+    {
+      "key_size": 16,
+      "iterations": 1000,
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "plaintext": "Selamat pagi, PHPCrypt 🐘",
+      "encoded": "AAECAwQFBgcICQoLDA0OD6Gio6SlpqeoqaqrrGhQ8Z5bBS1IokfubsbM32Ci9cphmSSPf7ibZByHWy06Zxcp6FGdZ4lb2vc="
+    },
+    {
+      "key_size": 24,
+      "iterations": 1000,
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "plaintext": "hello",
+      "encoded": "AAECAwQFBgcICQoLDA0OD6Gio6SlpqeoqaqrrGGakbiDq6HTDXXGmzI4EHMY+sbfAg=="
+    },
+    {
+      "key_size": 24,
+      "iterations": 1000,
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "plaintext": "Selamat pagi, PHPCrypt 🐘",
+      "encoded": "AAECAwQFBgcICQoLDA0OD6Gio6SlpqeoqaqrrFqakbWB9Lw5SSjB1WpswGnF5CIwLopDMoPce9uVHCE+BH8kJxV4XTkqYfQ="
+    },
+    {
+      "key_size": 32,
+      "iterations": 1000,
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "plaintext": "hello",
+      "encoded": "AAECAwQFBgcICQoLDA0OD6Gio6SlpqeoqaqrrJ4xiPSOrBELVEAvUp1//N2hnqKcBg=="
+    },
+    {
+      "key_size": 32,
+      "iterations": 1000,
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "nonce_hex": "a1a2a3a4a5a6a7a8a9aaabac",
+      "plaintext": "Selamat pagi, PHPCrypt 🐘",
+      "encoded": "AAECAwQFBgcICQoLDA0OD6Gio6SlpqeoqaqrrKUxiPmMAS+pi3igrq8p3gNoJ9XrFBoIIt6dwl67se3HjxpsNMBlMVE3cOE="
+    }
+  ]
+}

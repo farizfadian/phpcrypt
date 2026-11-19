@@ -223,6 +223,86 @@ class GoldenVectorTest extends TestCase
         $this->assertSame($plaintext, $encryptor->decrypt($encoded));
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // AES-GCM key sizes 16, 24 and 32 (gocrypt_keysize_vectors.json)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /** @return array<string, mixed> */
+    private static function keySizeFixture(): array
+    {
+        static $fixture = null;
+
+        return $fixture ??= json_decode(
+            (string) file_get_contents(__DIR__ . '/fixtures/gocrypt_keysize_vectors.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+    }
+
+    public function testKeySizeFixtureCoversAllThreeSizes(): void
+    {
+        $fixture = self::keySizeFixture();
+
+        $this->assertSame('github.com/farizfadian/gocrypt v1.0.0', $fixture['gocrypt_module']);
+        foreach (['vectors', 'fixed'] as $section) {
+            $sizes = array_values(array_unique(array_column($fixture[$section], 'key_size')));
+            sort($sizes);
+            $this->assertSame([16, 24, 32], $sizes, $section);
+        }
+    }
+
+    /** @return iterable<string, array{int, int, int, string, string}> */
+    public static function keySizeVectors(): iterable
+    {
+        foreach (self::keySizeFixture()['vectors'] as $i => $v) {
+            yield sprintf('#%d key_size=%d: %s', $i, $v['key_size'], self::label($v['plaintext']))
+                => [$v['key_size'], $v['iterations'], $v['salt_size'], $v['plaintext'], $v['encoded']];
+        }
+    }
+
+    #[DataProvider('keySizeVectors')]
+    public function testDecryptsGoCryptValueForKeySize(
+        int $keySize,
+        int $iterations,
+        int $saltSize,
+        string $plaintext,
+        string $encoded
+    ): void {
+        $encryptor = new Encryptor(self::keySizeFixture()['password'], $iterations, $saltSize, $keySize);
+
+        $this->assertSame($plaintext, $encryptor->decrypt($encoded));
+    }
+
+    /** @return iterable<string, array{int, int, string, string, string, string}> */
+    public static function keySizeFixedVectors(): iterable
+    {
+        foreach (self::keySizeFixture()['fixed'] as $i => $v) {
+            yield sprintf('#%d key_size=%d: %s', $i, $v['key_size'], self::label($v['plaintext']))
+                => [$v['key_size'], $v['iterations'], $v['salt_hex'], $v['nonce_hex'], $v['plaintext'], $v['encoded']];
+        }
+    }
+
+    #[DataProvider('keySizeFixedVectors')]
+    public function testKeySizeFixedVectorMatchesGoCrypt(
+        int $keySize,
+        int $iterations,
+        string $saltHex,
+        string $nonceHex,
+        string $plaintext,
+        string $encoded
+    ): void {
+        $salt = (string) hex2bin($saltHex);
+        $encryptor = new Encryptor(self::keySizeFixture()['password'], $iterations, strlen($salt), $keySize);
+
+        $actual = self::callPrivate($encryptor, 'encryptWithSaltAndIv', $plaintext, $salt, (string) hex2bin($nonceHex));
+
+        // GoCrypt itself decrypted this exact value when the fixture was generated,
+        // so byte-identical output means GoCrypt reads what PHPCrypt writes.
+        $this->assertSame($encoded, $actual, 'PHPCrypt must write exactly what GoCrypt accepts');
+        $this->assertSame($plaintext, $encryptor->decrypt($encoded));
+    }
+
     /** @return iterable<string, array{string, int, string, string}> */
     public static function jasyptDesVectors(): iterable
     {

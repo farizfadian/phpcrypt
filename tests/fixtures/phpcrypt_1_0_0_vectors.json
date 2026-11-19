@@ -1,0 +1,116 @@
+{
+    "description": "Values written by unmodified PHPCrypt 1.0.0. Later versions must keep reading all of them.",
+    "phpcrypt_version": "1.0.0",
+    "phpcrypt_commit": "1effe18aa726a1ce436a67f521fc02dfc5e4f051",
+    "generated_at": "2026-11-19",
+    "runtime": "PHP 8.5.12, OpenSSL 3.5.9 29 Sep 2026",
+    "password": "phpcrypt-legacy-2026",
+    "vectors": [
+        {
+            "class": "Encryptor",
+            "iterations": 10000,
+            "salt_size": 16,
+            "key_size": 32,
+            "plaintext": "hello",
+            "encoded": "6VNibhy6LB2zMiGnRALuzlaDam0dy33DOgHIoT9GTJu0H7MzlkiJbI6zQ6lhWzyF1A=="
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 10000,
+            "salt_size": 16,
+            "key_size": 32,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "56wAI8BESXTTNsVUQ72fFAM/e5NkgnNRuzxnbNvCtavcn5hKD67XMu5o+Dwj3ZRmtnHPffJWUW2ku8WFWjo8SNfJCrPZY+Q="
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 16,
+            "plaintext": "hello",
+            "encoded": "ejCXc1AGXEAUyi7ozuPF++qtb/aqFGJPIANLnnDG/Yjm5S1aiVgtorw="
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 16,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "x67KoyG4oWaysXTTIkh4zAmHsgwC8Ioj9e3V5MzvRqOYQUtIDQKamekHielfomFHN1Nl//sP8pI6LhKKO8zs"
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 24,
+            "plaintext": "hello",
+            "encoded": "q6qNN6mOIzkhZcEz1++FBJljg3qARm1PzNAOklfTfGn28b41aqDBDZ8="
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 24,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "ARhFzB1aE2BTM5hp8QGJN+XdGQPlgpG0xXE6GRzusxD7Nfld9+9Xj2M5i7ZVXvdBmLLS6b6uIx74QxNY5Aig"
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 20,
+            "plaintext": "hello",
+            "encoded": "ZpieB4z9uTu+hoAAK8tksmLYqYF+SRHOHR/1JB9b8uuHIWJWl08sIsY="
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 20,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "y8Pbngt+ZV+LOWUUywoi9VEiboFsI1SHdGpG51BQ6orbZZRvyBSkXT5P2kq1GlCtg6qCfZKrwn2NJnqtnOsY"
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 64,
+            "plaintext": "hello",
+            "encoded": "XKI20xzOKmzIPYRC7XyzXwt28uU6ZVYN2itBDPF/08U4rRXzLSfATE0="
+        },
+        {
+            "class": "Encryptor",
+            "iterations": 1000,
+            "salt_size": 8,
+            "key_size": 64,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "6Zn9J1rUMNGXrfkTPcJ46LAZVqTlb66etu5/2NMKSgVo7D/r1Tkpy9DXX2EalFf54jrpjB4C27reHT9xF4+M"
+        },
+        {
+            "class": "JasyptEncryptor",
+            "iterations": 1000,
+            "plaintext": "hello",
+            "encoded": "EmhSDsECF1MXsdc97u7VeA=="
+        },
+        {
+            "class": "JasyptEncryptor",
+            "iterations": 1000,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "HXr0ZxgL4RH1qESiDS/hWG/6TBiykDdpSSZIGt/DmMoni0ixlGocyg=="
+        },
+        {
+            "class": "JasyptStrongEncryptor",
+            "iterations": 1000,
+            "salt_size": 16,
+            "plaintext": "hello",
+            "encoded": "ykniRcOAVBGfwTBbu/FEgBpqJvYMXjvps9pkVpdZgeo="
+        },
+        {
+            "class": "JasyptStrongEncryptor",
+            "iterations": 1000,
+            "salt_size": 16,
+            "plaintext": "Selamat pagi, PHPCrypt 🐘",
+            "encoded": "+VmRjkSzvZJmpO4QcpmWkT3tpAebKTo+7rFCki+yG38Z47A0/IwRJV/Bd3wmA0z7"
+        }
+    ]
+}

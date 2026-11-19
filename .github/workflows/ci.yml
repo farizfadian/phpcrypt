@@ -49,6 +49,90 @@ jobs:
       - name: Run tests
         run: composer test
 
+  # Proves cross-language compatibility for real: live round trips against the
+  # released GoCrypt, RustCrypt, NodeCrypt and PyCrypt and the real Java Jasypt
+  # jar, with DES enabled. --fail-on-skipped turns any skipped test into a
+  # failure, so this job cannot pass by not running something.
+  interop:
+    name: Cross-language interop (Go, Rust, Node, Python, Java Jasypt)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: openssl
+          coverage: none
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Enable OpenSSL legacy provider
+        run: |
+          printf "openssl_conf = openssl_init\n[openssl_init]\nproviders = provider_sect\n[provider_sect]\ndefault = default_sect\nlegacy = legacy_sect\n[default_sect]\nactivate = 1\n[legacy_sect]\nactivate = 1\n" > "${{ github.workspace }}/openssl-legacy.cnf"
+          echo "OPENSSL_CONF=${{ github.workspace }}/openssl-legacy.cnf" >> $GITHUB_ENV
+
+      - name: Check that DES really works
+        run: php -r 'exit(@openssl_encrypt("test", "des-cbc", "12345678", OPENSSL_RAW_DATA, "12345678") === false ? 1 : 0);'
+
+      - name: Download counterparts (pinned by SHA-256)
+        run: |
+          mkdir -p "$RUNNER_TEMP/interop"
+          cd "$RUNNER_TEMP/interop"
+          curl -fsSL -o gocrypt-cli https://github.com/farizfadian/gocrypt/releases/download/v1.0.0/gocrypt-cli-linux-amd64
+          curl -fsSL -o rustcrypt https://github.com/farizfadian/rustcrypt/releases/download/v1.0.0/rustcrypt-linux-amd64
+          curl -fsSL -o jasypt-1.9.3.jar https://repo1.maven.org/maven2/org/jasypt/jasypt/1.9.3/jasypt-1.9.3.jar
+          sha256sum --check --strict <<'EOF'
+          d72a7e6aa130c234404019add62a1699b44cd36ed9c913e1948ae2807fdab92b  gocrypt-cli
+          f9800a23c2ae22fda471d3b21fae32d07e954e92aeb2a12f62368300afe14b04  rustcrypt
+          f481fbb8dd8ce754bfde7552af4fcbe8c5e303d53663bb3d8ce9d4338e0e55aa  jasypt-1.9.3.jar
+          EOF
+          chmod +x gocrypt-cli rustcrypt
+          ./gocrypt-cli version
+          ./rustcrypt --version
+          java -version
+          echo "GOCRYPT_CLI=$RUNNER_TEMP/interop/gocrypt-cli" >> $GITHUB_ENV
+          echo "RUSTCRYPT_CLI=$RUNNER_TEMP/interop/rustcrypt" >> $GITHUB_ENV
+          echo "JASYPT_JAR=$RUNNER_TEMP/interop/jasypt-1.9.3.jar" >> $GITHUB_ENV
+
+      # Do not go below 1.0.1: PyCrypt 1.0.0 wrote a default-mode format that no
+      # other family member could read.
+      - name: Install NodeCrypt and PyCrypt (pinned versions)
+        run: |
+          npm install --global nodecrypt-jasypt@1.0.1
+          python -m pip install pycrypt-jasypt==1.0.1
+          nodecrypt --version
+          pycrypt --version
+          echo "NODECRYPT_CLI=$(command -v nodecrypt)" >> $GITHUB_ENV
+          echo "PYCRYPT_CLI=$(command -v pycrypt)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run the whole suite (a skipped test fails this job)
+        run: vendor/bin/phpunit --fail-on-skipped
+        env:
+          # NodeCrypt needs DES too; Node loads the legacy provider through this flag.
+          NODE_OPTIONS: --openssl-legacy-provider
+          PYTHONIOENCODING: utf-8
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest

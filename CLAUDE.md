@@ -17,7 +17,7 @@ Package     : farizfadian/phpcrypt (Packagist)
 Dependencies: ext-openssl (PHP built-in)
 Dev Deps    : phpunit/phpunit ^10.0
 Created     : December 2024
-Status      : ✅ PUBLISHED & TESTED (v1.0.0)
+Status      : ✅ PUBLISHED & TESTED (first release v1.0.0, current version 1.0.1)
 Install     : composer require farizfadian/phpcrypt
 Registry    : Packagist (auto-sync from GitHub via webhook)
 Token       : Not needed
@@ -245,14 +245,19 @@ BSD `sed -i` requires a backup extension argument unlike GNU sed. Fixed by using
 ### 3. CBC Modes: Wrong Password - No Guaranteed Throw
 DES-CBC and AES-CBC have NO integrity check (unlike AES-GCM). Decrypting with a wrong password usually fails the padding check, but about 1 time in 256 it returns garbage instead of throwing. Tests must not expect an exception every time: `testJasyptWrongPasswordNeverReturnsPlaintext` accepts both outcomes.
 
-### 4. Release: Push a Tag, but Fix `composer.json` First
-Packagist auto-syncs from GitHub via webhook, so pushing a tag IS a release:
+### 4. Release: Pushing a Tag IS a Release
+Packagist auto-syncs from GitHub via webhook (seen working on 2026-11-19: a pushed branch appeared on Packagist within minutes). So pushing a tag publishes a version:
 ```bash
 git tag v1.x.x
 git push origin v1.x.x
 # Packagist auto-syncs (no token needed)
 ```
-`composer.json` hard-codes `"version": "1.0.0"`. Composer skips a tag whose name does not match that field, and only says so in `-vvv` output. Before tagging a new version, change the field to the new version or remove it (Composer then takes the version from the tag). Also update `VERSION` in `bin/phpcrypt` and the date in `CHANGELOG.md`.
+Before tagging:
+- Update `VERSION` in `bin/phpcrypt` and add the version and date to `CHANGELOG.md`.
+- Tag the commit on `main` whose CI run is green, not a branch.
+- Do NOT add a `"version"` field to `composer.json`. It was removed in 1.0.1: Composer takes the version from the tag, and it skips a tag that disagrees with a hard-coded field, saying so only in `-vvv` output.
+
+`v1.0.0` also has a GitHub Release; create one for each new tag with `gh release create <tag> --verify-tag`.
 
 ### 5. `JasyptStrongEncryptor` Is Not Java Compatible
 It is the family strong format. Real Jasypt 1.9.3 `PBEWithHmacSHA256AndAES_256` cannot read it and it cannot read Jasypt (confirmed 2026-11-19, pinned by two tests in `LiveInteropTest`). Decrypting a real Jasypt value does not even throw: the result is 16 bytes of garbage followed by the plaintext. Do not fix this in PHPCrypt alone.
@@ -323,13 +328,13 @@ Only the rows below were executed. A format that matches on paper is not a test:
 
 | Item | Status |
 |------|--------|
-| Published | ✅ v1.0.0 on Packagist |
+| Published | ✅ On Packagist since v1.0.0. Current version: 1.0.1 (tag `v1.0.1`) |
 | Install | `composer require farizfadian/phpcrypt` |
 | CI | ✅ GitHub Actions (PHP 8.1/8.2/8.3, multi-OS, plus the interop job) |
 | Release | ✅ Packagist auto-sync from GitHub (webhook). See Known Issue 4 before tagging |
 | Token | Not needed |
 | Cross-language tested | ✅ Go, Rust, Node, Python (all three modes, both directions) and Java Jasypt 1.9.3 (`--jasypt`, both directions). Details and limits: "Cross-Language Testing Status" |
-| Unreleased | Changes after v1.0.0 are listed in `CHANGELOG.md` under "Unreleased". Tagging a release is the maintainer's decision |
+| Changes | Listed per version in `CHANGELOG.md`. Tagging a release is the maintainer's decision |
 
 ---
 

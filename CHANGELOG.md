@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.1] - 2026-11-19
 
 PHPCrypt was run against the other libraries of the family for the first time. With default
-settings all three modes already matched; the fixes below cover what did not.
+settings all three modes already matched; the fixes below cover what did not. If you only use the
+defaults, nothing you have stored changes and no action is needed.
 
 ### Fixed
 
@@ -38,6 +39,8 @@ settings all three modes already matched; the fixes below cover what did not.
   when Java must read the value. No code changed here.
 - The README now lists what was actually tested, with versions, and documents the OpenSSL legacy
   provider that `JasyptEncryptor` needs.
+- `composer.json` no longer hard-codes a version. Composer takes it from the git tag, and it skips
+  a tag that disagrees with a hard-coded one.
 
 ### Added
 

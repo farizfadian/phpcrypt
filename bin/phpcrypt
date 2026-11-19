@@ -34,7 +34,7 @@ use PHPCrypt\JasyptEncryptor;
 use PHPCrypt\JasyptStrongEncryptor;
 use PHPCrypt\Utils;
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 
 function parseArgs(array $argv): array
 {

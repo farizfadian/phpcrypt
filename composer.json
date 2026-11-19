@@ -1,7 +1,6 @@
 {
     "name": "farizfadian/phpcrypt",
     "description": "Jasypt-like encryption library for PHP - Encrypt your configuration with ENC(...) pattern",
-    "version": "1.0.0",
     "type": "library",
     "license": "MIT",
     "authors": [

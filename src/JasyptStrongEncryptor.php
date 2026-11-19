@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace PHPCrypt;
 
 /**
- * Jasypt-compatible encryptor using PBEWithHmacSHA256AndAES_256.
+ * Stronger Jasypt-style encryptor: PBKDF2-HMAC-SHA256 + AES-256-CBC.
  *
- * This is a stronger algorithm compared to the default PBEWithMD5AndDES.
- * Use this when Java uses Jasypt's strong encryption.
+ * This is the family's "strong" format, the same as GoCrypt (the reference
+ * implementation): base64( salt . ciphertext ), where PBKDF2 derives 48 bytes,
+ * the first 32 being the AES-256 key and the last 16 the CBC IV.
+ *
+ * It is NOT readable by Java Jasypt. Jasypt's own PBEWithHmacSHA256AndAES_256
+ * stores a random IV in the payload (salt . iv . ciphertext), so neither side
+ * can read the other. When Java must read the value, use JasyptEncryptor.
  *
  * Example:
  * ```php
@@ -42,7 +47,7 @@ class JasyptStrongEncryptor
         int $iterations = self::DEFAULT_ITERATIONS,
         int $saltSize = self::DEFAULT_SALT_SIZE
     ) {
-        if (empty($password)) {
+        if ($password === '') {
             throw new \InvalidArgumentException('Password cannot be empty');
         }
 
@@ -72,12 +77,21 @@ class JasyptStrongEncryptor
      */
     public function encrypt(string $plaintext): string
     {
-        if (empty($plaintext)) {
+        return $this->encryptWithSalt($plaintext, random_bytes($this->saltSize));
+    }
+
+    /**
+     * Deterministic core of encrypt().
+     *
+     * @internal Not part of the public API. encrypt() always passes a fresh random
+     *           salt; the test suite calls this to reproduce GoCrypt's fixed-salt
+     *           vectors byte for byte.
+     */
+    private function encryptWithSalt(string $plaintext, string $salt): string
+    {
+        if ($plaintext === '') {
             throw new \InvalidArgumentException('Plaintext cannot be empty');
         }
-
-        // Generate random salt
-        $salt = random_bytes($this->saltSize);
 
         // Derive key and IV
         $derived = $this->deriveKeyAndIv($salt);
@@ -111,11 +125,11 @@ class JasyptStrongEncryptor
     }
 
     /**
-     * Decrypt data encrypted with PBEWithHmacSHA256AndAES_256.
+     * Decrypt a value in the family strong format (not Java Jasypt's).
      */
     public function decrypt(string $encoded): string
     {
-        if (empty($encoded)) {
+        if ($encoded === '') {
             throw new \InvalidArgumentException('Encoded value cannot be empty');
         }
 

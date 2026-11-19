@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPCrypt\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use PHPCrypt\Encryptor;
 use PHPCrypt\Utils;
@@ -177,42 +178,80 @@ class EncryptorTest extends TestCase
 
         $this->assertEquals($plaintext, $decrypted);
     }
-}
 
-class UtilsTest extends TestCase
-{
-    public function testIsEncryptedWithEncryptedValue(): void
+    // ════════════════════════════════════════════════════════════════════════
+    // Key sizes (as in GoCrypt: 16 = AES-128, 24 = AES-192, 32 = AES-256)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /** @return array<string, array{int}> */
+    public static function supportedKeySizes(): array
     {
-        $this->assertTrue(Utils::isEncrypted('ENC(abc123)'));
+        return ['AES-128' => [16], 'AES-192' => [24], 'AES-256' => [32]];
     }
 
-    public function testIsEncryptedWithEmptyEnc(): void
+    #[DataProvider('supportedKeySizes')]
+    public function testEncryptDecryptWithKeySize(int $keySize): void
     {
-        $this->assertTrue(Utils::isEncrypted('ENC()'));
+        $enc = new Encryptor('password', 1000, 16, $keySize);
+
+        $this->assertSame('key size test', $enc->decrypt($enc->encrypt('key size test')));
     }
 
-    public function testIsEncryptedWithSpaces(): void
+    public function testKeySizeSelectsTheCipher(): void
     {
-        $this->assertTrue(Utils::isEncrypted('  ENC(value)  '));
+        // PHPCrypt 1.0.0 always used AES-256 and let OpenSSL zero-pad a shorter
+        // key. A 16-byte key must now give AES-128, as in GoCrypt, so a new
+        // value must not fit the old layout.
+        $encoded = (new Encryptor('password', 1000, 16, 16))->encrypt('hello');
+
+        $raw = (string) base64_decode($encoded, true);
+        $key = hash_pbkdf2('sha256', 'password', substr($raw, 0, 16), 1000, 16, true);
+        $asOldLayout = openssl_decrypt(
+            substr($raw, 28, -16),
+            'aes-256-gcm',
+            str_pad($key, 32, "\0"),
+            OPENSSL_RAW_DATA,
+            substr($raw, 16, 12),
+            substr($raw, -16)
+        );
+
+        $this->assertFalse($asOldLayout);
     }
 
-    public function testIsEncryptedWithPlaintext(): void
+    public function testUnsupportedKeySizeIsRejectedOnEncrypt(): void
     {
-        $this->assertFalse(Utils::isEncrypted('plaintext'));
+        $enc = new Encryptor('password', 1000, 16, 20);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported key size 20');
+        $enc->encrypt('hello');
     }
 
-    public function testIsEncryptedWithMissingClosing(): void
+    public function testTooShortCiphertextIsRejected(): void
     {
-        $this->assertFalse(Utils::isEncrypted('ENC(missing'));
+        $enc = new Encryptor('password');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('too short');
+        $enc->decrypt(base64_encode('short'));
     }
 
-    public function testIsEncryptedWithEmptyString(): void
+    // ════════════════════════════════════════════════════════════════════════
+    // The string "0" is a value, not an empty value (as in GoCrypt)
+    // ════════════════════════════════════════════════════════════════════════
+
+    public function testEncryptDecryptZeroString(): void
     {
-        $this->assertFalse(Utils::isEncrypted(''));
+        $enc = new Encryptor('password');
+
+        $this->assertSame('0', $enc->decrypt($enc->encrypt('0')));
+        $this->assertSame('0', $enc->decryptPrefixed($enc->encryptWithPrefix('0')));
     }
 
-    public function testIsEncryptedWithNull(): void
+    public function testZeroStringPasswordIsAccepted(): void
     {
-        $this->assertFalse(Utils::isEncrypted(null));
+        $enc = new Encryptor('0');
+
+        $this->assertSame('secret', $enc->decrypt($enc->encrypt('secret')));
     }
 }

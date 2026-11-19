@@ -104,7 +104,13 @@ function parseArgs(array $argv): array
 
 function getPassword(?string $argsPassword): string
 {
-    return $argsPassword ?? getenv('PHPCRYPT_PASSWORD') ?: '';
+    if ($argsPassword !== null) {
+        return $argsPassword;
+    }
+
+    $fromEnv = getenv('PHPCRYPT_PASSWORD');
+
+    return $fromEnv === false ? '' : $fromEnv;
 }
 
 function createEncryptor(string $password, bool $jasypt, bool $jasyptStrong): Encryptor|JasyptEncryptor|JasyptStrongEncryptor
@@ -142,8 +148,9 @@ Options:
   -i, --input       Input file path
   -o, --output      Output file path
   --no-prefix       Don't wrap encrypted value with ENC(...)
-  --jasypt          Use Jasypt-compatible algorithm (PBEWithMD5AndDES)
-  --jasypt-strong   Use Jasypt strong algorithm (PBEWithHmacSHA256AndAES_256)
+  --jasypt          Use Jasypt-compatible algorithm (PBEWithMD5AndDES); readable by Java Jasypt
+  --jasypt-strong   Use the family strong format (PBKDF2-SHA256 + AES-256-CBC);
+                    same format as GoCrypt, NOT readable by Java Jasypt
 
 Examples:
   # Encrypt a database password
@@ -168,12 +175,12 @@ USAGE;
 function cmdEncrypt(array $args): void
 {
     $password = getPassword($args['password']);
-    if (empty($password)) {
+    if ($password === '') {
         fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
         exit(1);
     }
 
-    if (empty($args['value'])) {
+    if ($args['value'] === null || $args['value'] === '') {
         fwrite(STDERR, "Error: value is required (-v)\n");
         exit(1);
     }
@@ -197,12 +204,12 @@ function cmdEncrypt(array $args): void
 function cmdDecrypt(array $args): void
 {
     $password = getPassword($args['password']);
-    if (empty($password)) {
+    if ($password === '') {
         fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
         exit(1);
     }
 
-    if (empty($args['value'])) {
+    if ($args['value'] === null || $args['value'] === '') {
         fwrite(STDERR, "Error: value is required (-v)\n");
         exit(1);
     }
@@ -226,7 +233,7 @@ function cmdDecrypt(array $args): void
 function cmdEncryptFile(array $args): void
 {
     $password = getPassword($args['password']);
-    if (empty($password)) {
+    if ($password === '') {
         fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
         exit(1);
     }
@@ -253,7 +260,7 @@ function cmdEncryptFile(array $args): void
                 $value = trim(substr($trimmed, $pos + 1), '"\'');
 
                 // Encrypt if not already encrypted and not empty
-                if (!Utils::isEncrypted($value) && !empty($value)) {
+                if (!Utils::isEncrypted($value) && $value !== '') {
                     $encrypted = $enc->encryptWithPrefix($value);
                     $outputLines[] = "$key=$encrypted";
                     continue;
@@ -279,7 +286,7 @@ function cmdEncryptFile(array $args): void
 function cmdDecryptFile(array $args): void
 {
     $password = getPassword($args['password']);
-    if (empty($password)) {
+    if ($password === '') {
         fwrite(STDERR, "Error: password is required (-p or PHPCRYPT_PASSWORD)\n");
         exit(1);
     }

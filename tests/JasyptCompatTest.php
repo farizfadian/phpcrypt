@@ -11,22 +11,7 @@ use PHPCrypt\Utils;
 
 class JasyptCompatTest extends TestCase
 {
-    /**
-     * Check if DES-CBC is available (requires OpenSSL legacy provider on 3.0+).
-     */
-    private function skipIfDesNotAvailable(): void
-    {
-        $ciphers = openssl_get_cipher_methods();
-        if (!in_array('des-cbc', $ciphers, true)) {
-            $this->markTestSkipped('DES-CBC not available (OpenSSL legacy provider not loaded)');
-        }
-
-        // Also check that it actually works (some systems list it but fail)
-        $result = @openssl_encrypt('test', 'des-cbc', '12345678', OPENSSL_RAW_DATA, '12345678');
-        if ($result === false) {
-            $this->markTestSkipped('DES-CBC listed but not functional (OpenSSL legacy provider not loaded)');
-        }
-    }
+    use DesAvailability;
 
     // ════════════════════════════════════════════════════════════════════════
     // JasyptEncryptor Tests
@@ -106,7 +91,7 @@ class JasyptCompatTest extends TestCase
         $this->assertEquals($plaintext, $decrypted);
     }
 
-    public function testJasyptWrongPasswordThrows(): void
+    public function testJasyptWrongPasswordNeverReturnsPlaintext(): void
     {
         $this->skipIfDesNotAvailable();
         $enc1 = new JasyptEncryptor('correctPassword');
@@ -114,8 +99,27 @@ class JasyptCompatTest extends TestCase
 
         $encrypted = $enc1->encrypt('secret');
 
-        $this->expectException(\InvalidArgumentException::class);
-        $enc2->decrypt($encrypted);
+        // DES-CBC has no integrity check. A wrong password usually fails the
+        // padding check, but about 1 time in 256 the padding happens to look
+        // valid and garbage comes back instead. Both outcomes are acceptable;
+        // expecting an exception every time made this test fail at random.
+        try {
+            $result = $enc2->decrypt($encrypted);
+        } catch (\InvalidArgumentException $e) {
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $this->assertNotSame('secret', $result);
+    }
+
+    public function testJasyptEncryptDecryptZeroString(): void
+    {
+        $this->skipIfDesNotAvailable();
+        $enc = new JasyptEncryptor('0');
+
+        $this->assertSame('0', $enc->decrypt($enc->encrypt('0')));
     }
 
     public function testJasyptDecryptMap(): void
@@ -237,6 +241,13 @@ class JasyptCompatTest extends TestCase
 
         $decrypted = $enc->decryptPrefixed($encrypted);
         $this->assertEquals($plaintext, $decrypted);
+    }
+
+    public function testJasyptStrongEncryptDecryptZeroString(): void
+    {
+        $enc = new JasyptStrongEncryptor('0');
+
+        $this->assertSame('0', $enc->decrypt($enc->encrypt('0')));
     }
 
     public function testJasyptStrongCustomOptions(): void

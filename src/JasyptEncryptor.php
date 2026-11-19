@@ -45,7 +45,7 @@ class JasyptEncryptor
      */
     public function __construct(string $password, int $iterations = self::DEFAULT_ITERATIONS)
     {
-        if (empty($password)) {
+        if ($password === '') {
             throw new \InvalidArgumentException('Password cannot be empty');
         }
 
@@ -54,8 +54,9 @@ class JasyptEncryptor
     }
 
     /**
-     * Derive key and IV using PBKDF1 with MD5 (Jasypt's method).
-     * This implements the OpenSSL EVP_BytesToKey function used by Jasypt.
+     * Derive key and IV using PBKDF1 with MD5 (PKCS #5 v1.5), as Jasypt's
+     * PBEWithMD5AndDES does: md5(password . salt), then md5 of the result,
+     * for `iterations` MD5 calls in total.
      *
      * @return array{key: string, iv: string}
      */
@@ -86,12 +87,21 @@ class JasyptEncryptor
      */
     public function encrypt(string $plaintext): string
     {
-        if (empty($plaintext)) {
+        return $this->encryptWithSalt($plaintext, random_bytes(self::SALT_SIZE));
+    }
+
+    /**
+     * Deterministic core of encrypt().
+     *
+     * @internal Not part of the public API. encrypt() always passes a fresh random
+     *           salt; the test suite calls this to reproduce GoCrypt's fixed-salt
+     *           vectors byte for byte.
+     */
+    private function encryptWithSalt(string $plaintext, string $salt): string
+    {
+        if ($plaintext === '') {
             throw new \InvalidArgumentException('Plaintext cannot be empty');
         }
-
-        // Generate random salt
-        $salt = random_bytes(self::SALT_SIZE);
 
         // Derive key and IV
         $derived = $this->deriveKeyAndIv($salt);
@@ -132,7 +142,7 @@ class JasyptEncryptor
      */
     public function decrypt(string $encoded): string
     {
-        if (empty($encoded)) {
+        if ($encoded === '') {
             throw new \InvalidArgumentException('Encoded value cannot be empty');
         }
 

@@ -68,11 +68,13 @@ jobs:
           extensions: openssl
           coverage: none
 
+      # JDK 25, not 21: for PBEWithMD5AndDES, JDK 21 rejects a non-ASCII password
+      # ("Password is not ASCII"). JDK 25 accepts it, and that case is tested.
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
 
       - name: Setup Node
         uses: actions/setup-node@v4

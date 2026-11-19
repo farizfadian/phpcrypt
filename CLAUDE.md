@@ -273,11 +273,12 @@ Only the rows below were executed. A format that matches on paper is not a test:
 | RustCrypt v1.0.0 CLI | all three | both | ✅ CI `interop` job |
 | NodeCrypt 1.0.1 CLI | all three | both | ✅ CI `interop` job |
 | PyCrypt 1.0.1 CLI | all three | both | ✅ CI `interop` job |
-| Java Jasypt 1.9.3 `PBEWithMD5AndDES` | `--jasypt` | both | ✅ CI `interop` job |
+| Java Jasypt 1.9.3 on JDK 25, `PBEWithMD5AndDES` | `--jasypt` | both | ✅ CI `interop` job |
 | Java Jasypt 1.9.3 `PBEWithHmacSHA256AndAES_256` | `--jasypt-strong` | both | ❌ by design, see Known Issue 5 |
 
 - Each live round trip uses five cases: ASCII, punctuation, 200 characters, non-ASCII text with an emoji, and a non-ASCII password.
 - The same suite passed on Windows on 2026-11-19 (PHP 8.5.12, OpenSSL 3.5.9 with the legacy provider, JDK 25, Node 24, Python 3.14), 0 skipped.
+- **Non-ASCII passwords depend on the JDK.** With `PBEWithMD5AndDES`, JDK 21 (Temurin, in CI) throws `Password is not ASCII` before Jasypt does any work. JDK 25 accepts the password and uses its UTF-8 bytes, as the family does. That is why the interop job runs JDK 25. On a JDK that rejects it, `LiveInteropTest` skips that one case with a message.
 - Not tested: Jasypt inside a Spring Boot application, and PHP on macOS against the live tools (the macOS jobs run the golden vectors only).
 
 ---
@@ -292,7 +293,7 @@ Only the rows below were executed. A format that matches on paper is not a test:
 - The live interop tests are skipped in the matrix. On Windows the DES tests are skipped too.
 
 ### Interop Job
-- Runs on ubuntu-latest with PHP 8.3, the OpenSSL legacy provider, JDK 21, Node 22 and Python 3.12
+- Runs on ubuntu-latest with PHP 8.3, the OpenSSL legacy provider, JDK 25, Node 22 and Python 3.12
 - Downloads `gocrypt-cli` v1.0.0, `rustcrypt` v1.0.0 and `jasypt-1.9.3.jar`, each checked against a pinned SHA-256
 - Installs `nodecrypt-jasypt@1.0.1` (npm) and `pycrypt-jasypt==1.0.1` (PyPI)
 - Runs the whole suite with `--fail-on-skipped`

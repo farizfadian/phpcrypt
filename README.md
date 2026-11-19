@@ -181,7 +181,7 @@ Only the rows below were executed. A format that matches on paper is not a test.
 | RustCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
 | NodeCrypt 1.0.1 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
 | PyCrypt 1.0.1 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
-| Java Jasypt 1.9.3, `PBEWithMD5AndDES` | `--jasypt` | both | ✅ CI `interop` job |
+| Java Jasypt 1.9.3 on JDK 25, `PBEWithMD5AndDES` | `--jasypt` | both | ✅ CI `interop` job |
 | Java Jasypt 1.9.3, `PBEWithHmacSHA256AndAES_256` | `--jasypt-strong` | both | ❌ not compatible, by design of the family format |
 
 Each live round trip covers ASCII, punctuation, a 200-character value, non-ASCII text with an
@@ -189,6 +189,11 @@ emoji, and a non-ASCII password. The `interop` job runs on Linux with the OpenSS
 enabled and fails if any test is skipped. The same tests passed on Windows (PHP 8.5.12,
 OpenSSL 3.5.9, JDK 25) on 2026-11-19. Do not use PyCrypt 1.0.0 with the default mode: its values
 cannot be read by the other libraries (fixed in PyCrypt 1.0.1).
+
+**Non-ASCII passwords and Java.** PHPCrypt and the rest of the family use the UTF-8 bytes of the
+password. Java decides for itself: with `PBEWithMD5AndDES`, JDK 21 rejects a non-ASCII password
+outright (`Password is not ASCII`), while JDK 25 accepts it and agrees with the family. If a Java
+service on an older JDK must read the value, use an ASCII password.
 
 ### 🔑 `JasyptEncryptor` needs the OpenSSL legacy provider
 

@@ -16,11 +16,11 @@
 If you're coming from Java/Spring Boot world and need to share encrypted configuration across multiple languages, PHPCrypt is for you! It provides:
 
 - ✅ **Familiar `ENC(...)` pattern** - Just like Jasypt in Spring Boot
-- ✅ **Java Jasypt compatibility** - Decrypt values encrypted by Java
+- ✅ **Java Jasypt compatibility** - Reads and writes Jasypt's default algorithm (`PBEWithMD5AndDES`)
 - ✅ **Multiple algorithms** - From legacy Jasypt to modern AES-256-GCM
 - ✅ **Laravel/Symfony ready** - Easy integration with PHP frameworks
 - ✅ **CLI tool included** - Encrypt/decrypt from command line
-- ✅ **Cross-platform** - Works with GoCrypt, PyCrypt, NodeCrypt, RustCrypt, and Java Jasypt
+- ✅ **Cross-language** - The same values as GoCrypt, RustCrypt, NodeCrypt and PyCrypt, [tested in CI against all four](#-what-has-actually-been-tested)
 
 ---
 
@@ -74,11 +74,11 @@ echo $config['DATABASE_PASSWORD']; // actual_password
 
 ## 🔐 Encryption Algorithms
 
-| Encryptor | Algorithm | Security | Use Case |
-|-----------|-----------|----------|----------|
-| `Encryptor` | AES-256-GCM | ⭐⭐⭐⭐⭐ | **Recommended** for new projects |
-| `JasyptStrongEncryptor` | PBEWithHmacSHA256AndAES_256 | ⭐⭐⭐⭐ | Jasypt strong compatibility |
-| `JasyptEncryptor` | PBEWithMD5AndDES | ⭐⭐ | Legacy Jasypt compatibility |
+| Encryptor | Algorithm | Security | Java Jasypt can read it? | Use Case |
+|-----------|-----------|----------|--------------------------|----------|
+| `Encryptor` | AES-256-GCM + PBKDF2-HMAC-SHA256 | ⭐⭐⭐⭐⭐ | ❌ No | **Recommended** when only family libraries read the value |
+| `JasyptStrongEncryptor` | AES-256-CBC + PBKDF2-HMAC-SHA256 | ⭐⭐⭐⭐ | ❌ No (family format) | Stronger Jasypt-style mode shared inside the family |
+| `JasyptEncryptor` | PBEWithMD5AndDES | ⭐⭐ | ✅ Yes | Values shared with Java Jasypt |
 
 ### Choose the Right Algorithm
 
@@ -89,15 +89,17 @@ use PHPCrypt\Encryptor;
 use PHPCrypt\JasyptEncryptor;
 use PHPCrypt\JasyptStrongEncryptor;
 
-// RECOMMENDED: For new PHP projects
+// RECOMMENDED: when only PHP/Go/Rust/Node/Python services read the value
 $enc = new Encryptor($password);
 
-// For compatibility with Java Jasypt (default algorithm)
+// When Java Jasypt must read the value (Jasypt's default algorithm)
 $enc = new JasyptEncryptor($password);
 
-// For compatibility with Java Jasypt (strong encryption)
+// Stronger CBC mode shared inside the family. Java Jasypt can NOT read it.
 $enc = new JasyptStrongEncryptor($password);
 ```
+
+**Rule of thumb:** when a Java service reads the same configuration, always use `JasyptEncryptor`.
 
 ---
 
@@ -106,20 +108,34 @@ $enc = new JasyptStrongEncryptor($password);
 ### ⚠️ Important: Compatibility Matrix
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│            ENCRYPT WITH → DECRYPT WITH                          │
-├─────────────────────────────────────────────────────────────────┤
-│ Java Jasypt (default)  → JasyptEncryptor        ✅ YES          │
-│ Java Jasypt (strong)   → JasyptStrongEncryptor  ✅ YES          │
-│ Java Jasypt (default)  → Encryptor              ❌ NO           │
-│ Encryptor              → Java Jasypt            ❌ NO           │
-│ JasyptEncryptor        → Java Jasypt            ✅ YES          │
-│ GoCrypt JasyptEnc      → JasyptEncryptor        ✅ YES          │
-│ PyCrypt JasyptEnc      → JasyptEncryptor        ✅ YES          │
-│ NodeCrypt JasyptEnc    → JasyptEncryptor        ✅ YES          │
-│ RustCrypt JasyptEnc    → JasyptEncryptor        ✅ YES          │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│            ENCRYPT WITH → DECRYPT WITH                               │
+├──────────────────────────────────────────────────────────────────────┤
+│ Java Jasypt PBEWithMD5AndDES → JasyptEncryptor            ✅ YES     │
+│ JasyptEncryptor              → Java Jasypt PBEWithMD5AndDES ✅ YES   │
+│ Java Jasypt (any algorithm)  → Encryptor                  ❌ NO      │
+│ Encryptor                    → Java Jasypt                ❌ NO      │
+│ Java Jasypt AES algorithms   → JasyptStrongEncryptor      ❌ NO      │
+│ JasyptStrongEncryptor        → Java Jasypt                ❌ NO      │
+│ GoCrypt / RustCrypt / NodeCrypt / PyCrypt, same mode      ✅ YES     │
+│   (all three modes, both directions)                                 │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+**`JasyptStrongEncryptor` is not Java compatible.** It is the family's own strong format,
+`salt ‖ ciphertext` with the IV derived by PBKDF2. Jasypt's `PBEWithHmacSHA256AndAES_256`
+stores a random IV in the payload (`salt ‖ iv ‖ ciphertext`), so neither side reads the other.
+It does not even fail loudly: CBC has no integrity check, and decrypting a real Jasypt value
+with `JasyptStrongEncryptor` returned 16 bytes of garbage followed by the plaintext.
+
+**Which algorithm does your Java side use?** `JasyptEncryptor` matches Jasypt 1.9.3 with
+`PBEWithMD5AndDES` and no IV generator, which is what `StandardPBEStringEncryptor` and
+`BasicTextEncryptor` do when left alone. `jasypt-spring-boot` 3.0.5 defaults to
+`PBEWITHHMACSHA512ANDAES_256` with a random IV instead, and no library in this family reads
+that. To share values, the Java side has to use `PBEWithMD5AndDES` with
+`org.jasypt.iv.NoIvGenerator` (in `jasypt-spring-boot`: `jasypt.encryptor.algorithm` and
+`jasypt.encryptor.iv-generator-classname`). This was tested against the Jasypt library itself,
+not inside a Spring Boot application.
 
 ### Decrypt Values from Java
 
@@ -153,6 +169,47 @@ $encrypted = $enc->encryptWithPrefix('shared_secret');
 // - Node.js: using nodecrypt.JasyptEncryptor
 // - Java: using Jasypt library
 ```
+
+### ✅ What has actually been tested
+
+Only the rows below were executed. A format that matches on paper is not a test.
+
+| Counterpart | Mode | Direction | Result |
+|-------------|------|-----------|--------|
+| GoCrypt v1.0.0, golden vectors | default, `--jasypt`, `--jasypt-strong` | GoCrypt → PHPCrypt, and byte-identical output for a fixed salt | ✅ every CI job |
+| GoCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
+| RustCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
+| NodeCrypt 1.0.1 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
+| PyCrypt 1.0.1 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
+| Java Jasypt 1.9.3, `PBEWithMD5AndDES` | `--jasypt` | both | ✅ CI `interop` job |
+| Java Jasypt 1.9.3, `PBEWithHmacSHA256AndAES_256` | `--jasypt-strong` | both | ❌ not compatible, by design of the family format |
+
+Each live round trip covers ASCII, punctuation, a 200-character value, non-ASCII text with an
+emoji, and a non-ASCII password. The `interop` job runs on Linux with the OpenSSL legacy provider
+enabled and fails if any test is skipped. The same tests passed on Windows (PHP 8.5.12,
+OpenSSL 3.5.9, JDK 25) on 2026-11-19. Do not use PyCrypt 1.0.0 with the default mode: its values
+cannot be read by the other libraries (fixed in PyCrypt 1.0.1).
+
+### 🔑 `JasyptEncryptor` needs the OpenSSL legacy provider
+
+`PBEWithMD5AndDES` uses DES, which OpenSSL 3 only offers through its legacy provider. Without it
+`JasyptEncryptor` throws. Point `OPENSSL_CONF` at a file like this before PHP starts:
+
+```ini
+openssl_conf = openssl_init
+[openssl_init]
+providers = provider_sect
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+[default_sect]
+activate = 1
+[legacy_sect]
+activate = 1
+```
+
+On Windows also set `OPENSSL_MODULES` to the folder that holds `legacy.dll` (the official PHP
+builds ship it in `extras\ssl`). `Encryptor` and `JasyptStrongEncryptor` do not need any of this.
 
 ---
 
@@ -284,7 +341,7 @@ $enc = new Encryptor(
     password: $password,
     iterations: 50000,  // default: 10000
     saltSize: 32,       // default: 16
-    keySize: 32         // 32 = AES-256
+    keySize: 32         // 32 = AES-256 (default), 24 = AES-192, 16 = AES-128
 );
 
 // Jasypt Compatible
@@ -366,6 +423,20 @@ composer test
 composer test-coverage
 ```
 
+Tests that need DES are skipped when the OpenSSL legacy provider is not loaded, and the live
+cross-language tests are skipped unless you tell them where the other tools are:
+
+```bash
+export GOCRYPT_CLI=/path/to/gocrypt-cli       # github.com/farizfadian/gocrypt releases
+export RUSTCRYPT_CLI=/path/to/rustcrypt       # github.com/farizfadian/rustcrypt releases
+export NODECRYPT_CLI=/path/to/nodecrypt       # npm install -g nodecrypt-jasypt
+export PYCRYPT_CLI=/path/to/pycrypt           # pip install pycrypt-jasypt
+export JASYPT_JAR=/path/to/jasypt-1.9.3.jar   # org.jasypt:jasypt on Maven Central, needs java on PATH
+
+# Fails instead of skipping when something is missing
+vendor/bin/phpunit --fail-on-skipped
+```
+
 ---
 
 ## 📁 Project Structure
@@ -382,7 +453,14 @@ phpcrypt/
 │   └── phpcrypt               # CLI tool
 ├── tests/
 │   ├── EncryptorTest.php
-│   └── JasyptCompatTest.php
+│   ├── JasyptCompatTest.php
+│   ├── UtilsTest.php
+│   ├── CliTest.php                    # bin/phpcrypt end to end
+│   ├── GoldenVectorTest.php           # GoCrypt golden vectors
+│   ├── BackwardCompatibilityTest.php  # values written by PHPCrypt 1.0.0
+│   ├── LiveInteropTest.php            # live round trips with the other libraries
+│   ├── interop/JasyptTool.java        # drives the real Jasypt jar
+│   └── fixtures/                      # gocrypt_vectors.json, phpcrypt_1_0_0_vectors.json
 ├── composer.json
 ├── phpunit.xml
 ├── README.md

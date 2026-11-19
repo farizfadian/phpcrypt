@@ -135,7 +135,7 @@ class LiveInteropTest extends TestCase
         $this->skipIfDesNotAvailable();
 
         // The Jasypt API returns bare base64; the ENC(...) wrapper belongs to the config layer.
-        $encoded = $this->jasypt($jar, 'encrypt', 'PBEWithMD5AndDES', $password, $plaintext);
+        $encoded = $this->jasyptDes($jar, 'encrypt', $password, $plaintext);
 
         $this->assertSame($plaintext, (new JasyptEncryptor($password))->decrypt($encoded));
     }
@@ -148,7 +148,31 @@ class LiveInteropTest extends TestCase
 
         $encoded = (new JasyptEncryptor($password))->encrypt($plaintext);
 
-        $this->assertSame($plaintext, $this->jasypt($jar, 'decrypt', 'PBEWithMD5AndDES', $password, $encoded));
+        $this->assertSame($plaintext, $this->jasyptDes($jar, 'decrypt', $password, $encoded));
+    }
+
+    /**
+     * Runs real Jasypt with PBEWithMD5AndDES.
+     *
+     * Some JDKs refuse a non-ASCII password for this algorithm before Jasypt
+     * does any work: JDK 21 throws "Password is not ASCII", JDK 25 accepts it
+     * and uses its UTF-8 bytes, as the family does. That is a limit of the JDK,
+     * not a disagreement about the format, so the case is skipped there. The CI
+     * interop job runs JDK 25 with --fail-on-skipped, so it is proven for real.
+     */
+    private function jasyptDes(string $jar, string $operation, string $password, string $value): string
+    {
+        try {
+            return $this->jasypt($jar, $operation, 'PBEWithMD5AndDES', $password, $value, false);
+        } catch (\RuntimeException $e) {
+            if (str_contains($e->getMessage(), 'Password is not ASCII')) {
+                $this->markTestSkipped(
+                    'This JDK rejects non-ASCII passwords for PBEWithMD5AndDES (JDK 21 does; JDK 25 accepts them)'
+                );
+            }
+
+            $this->fail($e->getMessage());
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════

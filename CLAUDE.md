@@ -268,7 +268,7 @@ Only the rows below were executed. A format that matches on paper is not a test:
 
 | Counterpart | Mode | Direction | Result |
 |-------------|------|-----------|--------|
-| GoCrypt v1.0.0 golden vectors | all three | decrypt 12 values; reproduce 17 fixed-salt values byte for byte | ✅ every CI job (`GoldenVectorTest`) |
+| GoCrypt v1.0.0 golden vectors | all three | decrypt 12 values; reproduce 17 fixed-salt values byte for byte | ✅ every CI job (`GoldenVectorTest`); the DES ones are skipped on Windows with PHP 8.2/8.3 |
 | GoCrypt v1.0.0 CLI | all three | both | ✅ CI `interop` job |
 | RustCrypt v1.0.0 CLI | all three | both | ✅ CI `interop` job |
 | NodeCrypt 1.0.1 CLI | all three | both | ✅ CI `interop` job |
@@ -290,7 +290,7 @@ Only the rows below were executed. A format that matches on paper is not a test:
 - **OS**: ubuntu-latest, windows-latest, macos-latest
 - **Total**: 9 test combinations
 - **Extensions**: openssl, xdebug (for coverage)
-- The live interop tests are skipped in the matrix. On Windows the DES tests are skipped too.
+- The live interop tests are skipped in the matrix (132 of 244 tests). On Windows with PHP 8.2 and 8.3 the DES tests are skipped too (153 skipped); Windows with PHP 8.1 runs them.
 
 ### Interop Job
 - Runs on ubuntu-latest with PHP 8.3, the OpenSSL legacy provider, JDK 25, Node 22 and Python 3.12

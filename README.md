@@ -176,7 +176,7 @@ Only the rows below were executed. A format that matches on paper is not a test.
 
 | Counterpart | Mode | Direction | Result |
 |-------------|------|-----------|--------|
-| GoCrypt v1.0.0, golden vectors | default, `--jasypt`, `--jasypt-strong` | GoCrypt → PHPCrypt, and byte-identical output for a fixed salt | ✅ every CI job |
+| GoCrypt v1.0.0, golden vectors | default, `--jasypt`, `--jasypt-strong` | GoCrypt → PHPCrypt, and byte-identical output for a fixed salt | ✅ every CI job (DES vectors skipped on Windows with PHP 8.2/8.3) |
 | GoCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
 | RustCrypt v1.0.0 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
 | NodeCrypt 1.0.1 | default, `--jasypt`, `--jasypt-strong` | both | ✅ CI `interop` job |
